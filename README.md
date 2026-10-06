@@ -10,7 +10,7 @@ $$\dot k = \underbrace{sAk^{\alpha}}_{\text{inversión bruta}} - \underbrace{\de
 
 | Archivo | Contenido |
 |---|---|
-| `index.html` | Simulador interactivo (abre en cualquier navegador o publícalo con GitHub Pages). |
+| `index.html` | Simulador interactivo (abre en cualquier navegador) |
 | `R/solow_swan.R` | La misma simulación en R con `ggplot2`, para reproducir las gráficas en RStudio. |
 
 ## Qué muestra el simulador
