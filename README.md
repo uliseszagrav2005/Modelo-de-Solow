@@ -36,13 +36,6 @@ $$\dot k = \underbrace{sAk^{\alpha}}_{\text{inversión bruta}} - \underbrace{\de
 
 Con los valores del libro (α = 0.30, δ = 0.10, n = 0.01) el simulador reproduce β\* ≈ 7.7% anual y una vida media de unos 9 años.
 
-## Cómo publicarlo con GitHub Pages
-
-1. Crea un repositorio nuevo en GitHub (por ejemplo `solow-swan-dinamico`).
-2. Sube `index.html`, `README.md` y la carpeta `R/` a la rama `main`.
-3. En el repositorio entra a **Settings → Pages**, en *Source* elige **Deploy from a branch**, rama `main`, carpeta `/ (root)` y guarda.
-4. En uno o dos minutos el simulador estará en `https://TU-USUARIO.github.io/solow-swan-dinamico/`.
-
 ## Notas técnicas
 
 - La ecuación diferencial se resuelve numéricamente con Runge-Kutta de cuarto orden (paso de 0.05 años).
