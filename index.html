@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solow-Swan dinámico · Sala-i-Martin, cap. 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#F2F4F6; --panel:#FFFFFF; --ink:#18263A; --muted:#5A6779; --rule:#D5DBE2;
+  --c-out:#7A8798;   /* f(k) */
+  --c-inv:#1F7A55;   /* sAk^α: inversión / curva de ahorro */
+  --c-dep:#B02A37;   /* (δ+n)k: depreciación efectiva */
+  --c-dil:#7B4FA0;   /* nk: dilución */
+  --c-tec:#2E6FB0;   /* xk */
+  --c-kdot:#C08A00;  /* k̇ */
+  --grid:rgba(24,38,58,.08);
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  box-sizing:border-box;
+}
+*,*::before,*::after{box-sizing:inherit}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121A24; --panel:#1A2533; --ink:#E6ECF2; --muted:#9AA8B8; --rule:#2C3A4B;
+    --c-out:#8E9AAB; --c-inv:#4CC08E; --c-dep:#EB6A75; --c-dil:#B48CE0; --c-tec:#6CA8E8; --c-kdot:#E8B732;
+    --grid:rgba(230,236,242,.08);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121A24; --panel:#1A2533; --ink:#E6ECF2; --muted:#9AA8B8; --rule:#2C3A4B;
+  --c-out:#8E9AAB; --c-inv:#4CC08E; --c-dep:#EB6A75; --c-dil:#B48CE0; --c-tec:#6CA8E8; --c-kdot:#E8B732;
+  --grid:rgba(230,236,242,.08);
+}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+header h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.6rem,3vw,2.3rem);line-height:1.15;margin:0 0 6px}
+header p{color:var(--muted);margin:0;max-width:70ch}
+
+/* Ecuación viva */
+.eq{margin:26px 0 8px;padding:22px 20px 18px;background:var(--panel);border-left:4px solid var(--ink)}
+.eq-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;font-family:var(--serif)}
+.term{display:flex;flex-direction:column;align-items:center;min-width:88px}
+.term .sym{font-size:clamp(1.5rem,3.2vw,2.3rem);line-height:1.1}
+.term .val{font-family:var(--sans);font-variant-numeric:tabular-nums;font-size:.95rem;font-weight:600;margin-top:4px}
+.term .lab{font-family:var(--sans);font-size:.75rem;color:var(--muted);text-align:center;max-width:16ch}
+.op{font-size:clamp(1.5rem,3.2vw,2.3rem);padding-bottom:30px;color:var(--muted);font-family:var(--serif)}
+.t-kdot .sym,.t-kdot .val{color:var(--c-kdot)}
+.t-inv .sym,.t-inv .val{color:var(--c-inv)}
+.t-dep .sym,.t-dep .val{color:var(--c-dep)}
+.t-dil .sym,.t-dil .val{color:var(--c-dil)}
+.t-tec .sym,.t-tec .val{color:var(--c-tec)}
+.balance{margin-top:14px;height:14px;display:flex;background:var(--rule);overflow:hidden}
+.balance div{height:100%;transition:width .12s linear}
+.eq-note{margin:10px 0 0;color:var(--muted);font-size:.88rem}
+
+/* Línea de tiempo */
+.timebar{display:flex;align-items:center;gap:12px;margin:14px 0 22px;flex-wrap:wrap}
+.timebar input[type=range]{flex:1;min-width:200px}
+button{font:inherit;font-weight:600;border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:7px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--c-kdot);outline-offset:2px}
+.tlabel{font-variant-numeric:tabular-nums;min-width:9ch}
+
+/* Diseño principal */
+.layout{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+aside{background:var(--panel);padding:18px 16px;position:sticky;top:env(safe-area-inset-top,0px)}
+@media (max-width:900px){aside{position:static}}
+aside h2{font-family:var(--serif);font-size:1.1rem;margin:4px 0 10px}
+aside h2:not(:first-child){margin-top:22px;padding-top:14px;border-top:1px solid var(--rule)}
+.ctrl{margin-bottom:12px}
+.ctrl label{display:flex;justify-content:space-between;font-size:.88rem}
+.ctrl label span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+.ctrl small{display:block;color:var(--muted);font-size:.76rem;line-height:1.3}
+input[type=range]{width:100%;accent-color:var(--ink)}
+select{width:100%;font:inherit;padding:5px;background:var(--panel);color:var(--ink);border:1px solid var(--rule)}
+.presets{display:flex;flex-direction:column;gap:6px}
+.presets button{text-align:left;font-weight:500;font-size:.86rem}
+
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:1100px){.charts{grid-template-columns:1fr}}
+figure{margin:0;background:var(--panel);padding:14px 14px 10px}
+figure.wide{grid-column:1/-1}
+figcaption{font-family:var(--serif);font-weight:600;font-size:1rem;margin-bottom:2px}
+figure p{margin:0 0 8px;color:var(--muted);font-size:.84rem}
+.cbox{position:relative;height:290px}
+
+/* Tablas */
+.stats{margin-top:18px;background:var(--panel);padding:14px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:6px 10px;border-bottom:1px solid var(--rule);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted)}
+.flag{margin-top:10px;font-size:.88rem;padding:8px 10px;border-left:3px solid var(--c-dep);background:var(--paper)}
+.flag.ok{border-left-color:var(--c-inv)}
+
+.theory{margin-top:30px;background:var(--panel);padding:20px 22px}
+.theory h2{font-family:var(--serif);margin:0 0 8px}
+.theory p{max-width:78ch;font-family:var(--serif);font-size:1.02rem;line-height:1.65}
+.theory .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0}
+footer{margin-top:24px;color:var(--muted);font-size:.82rem}
+@media (prefers-reduced-motion: reduce){.balance div{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>La ecuación fundamental de Solow-Swan, en movimiento</h1>
+  <p>Simulador del modelo neoclásico del capítulo 1 de <em>Apuntes de crecimiento económico</em> (Sala-i-Martin). Mueve los parámetros, aplica un choque y observa cómo cada término de la ecuación empuja o frena al capital per cápita en cada instante.</p>
+</header>
+
+<section class="eq" aria-live="polite">
+  <div class="eq-row">
+    <div class="term t-kdot"><span class="sym">k̇</span><span class="val" id="v-kdot">–</span><span class="lab">cambio del capital per cápita</span></div>
+    <span class="op">=</span>
+    <div class="term t-inv"><span class="sym">s·A·k<sup>α</sup></span><span class="val" id="v-inv">–</span><span class="lab">inversión bruta (ahorro)</span></div>
+    <span class="op">−</span>
+    <div class="term t-dep"><span class="sym">δ·k</span><span class="val" id="v-dep">–</span><span class="lab">depreciación</span></div>
+    <span class="op">−</span>
+    <div class="term t-dil"><span class="sym">n·k</span><span class="val" id="v-dil">–</span><span class="lab">dilución por población</span></div>
+    <span class="op" id="op-tec">−</span>
+    <div class="term t-tec" id="term-tec"><span class="sym">x·k</span><span class="val" id="v-tec">–</span><span class="lab">progreso técnico</span></div>
+  </div>
+  <div class="balance" aria-hidden="true">
+    <div id="bar-dep" style="background:var(--c-dep)"></div>
+    <div id="bar-dil" style="background:var(--c-dil)"></div>
+    <div id="bar-tec" style="background:var(--c-tec)"></div>
+    <div id="bar-gap" style="background:var(--c-kdot)"></div>
+  </div>
+  <p class="eq-note" id="eq-note">La barra compara la inversión bruta (ancho total) con lo que hace falta para mantener k constante.</p>
+</section>
+
+<div class="timebar">
+  <button id="play" type="button">Reproducir</button>
+  <button id="reset" class="ghost" type="button">Volver a t = 0</button>
+  <input id="tcur" type="range" min="0" max="80" step="0.25" value="0" aria-label="Momento del tiempo">
+  <span class="tlabel" id="tlabel">t = 0.0</span>
+</div>
+
+<div class="layout">
+<aside>
+  <h2>Parámetros iniciales</h2>
+  <div class="ctrl"><label for="s"><span>Tasa de ahorro, s</span><span id="s-o"></span></label><input id="s" type="range" min="0.01" max="0.9" step="0.01" value="0.20"></div>
+  <div class="ctrl"><label for="A"><span>Nivel tecnológico, A</span><span id="A-o"></span></label><input id="A" type="range" min="0.5" max="3" step="0.05" value="1"></div>
+  <div class="ctrl"><label for="alpha"><span>Participación del capital, α</span><span id="alpha-o"></span></label><input id="alpha" type="range" min="0.1" max="0.9" step="0.01" value="0.30"></div>
+  <div class="ctrl"><label for="delta"><span>Depreciación, δ</span><span id="delta-o"></span></label><input id="delta" type="range" min="0.02" max="0.2" step="0.005" value="0.10"></div>
+  <div class="ctrl"><label for="n"><span>Crecimiento poblacional, n</span><span id="n-o"></span></label><input id="n" type="range" min="-0.01" max="0.05" step="0.0025" value="0.01"></div>
+  <div class="ctrl"><label for="x"><span>Progreso técnico, x</span><span id="x-o"></span></label><input id="x" type="range" min="0" max="0.05" step="0.0025" value="0"><small>Con x &gt; 0, k y y se miden por trabajador efectivo (sección 1.5).</small></div>
+  <div class="ctrl"><label for="k0r"><span>Capital inicial, k₀ / k*</span><span id="k0r-o"></span></label><input id="k0r" type="range" min="0.05" max="2.5" step="0.05" value="1"><small>1 = la economía arranca en su estado estacionario.</small></div>
+
+  <h2>Choque permanente</h2>
+  <div class="ctrl"><label for="shv"><span>Variable que cambia</span></label>
+    <select id="shv">
+      <option value="none">Sin choque</option>
+      <option value="s" selected>Tasa de ahorro, s</option>
+      <option value="A">Tecnología, A</option>
+      <option value="n">Población, n</option>
+      <option value="delta">Depreciación, δ</option>
+      <option value="x">Progreso técnico, x</option>
+    </select></div>
+  <div class="ctrl" id="shval-box"><label for="shval"><span>Nuevo valor</span><span id="shval-o"></span></label><input id="shval" type="range" min="0" max="1" step="0.01" value="0.3"></div>
+  <div class="ctrl"><label for="T"><span>Momento del choque, T</span><span id="T-o"></span></label><input id="T" type="range" min="0" max="60" step="1" value="10"></div>
+  <div class="ctrl"><label for="H"><span>Horizonte (años)</span><span id="H-o"></span></label><input id="H" type="range" min="30" max="200" step="10" value="80"></div>
+
+  <h2>Escenarios del capítulo</h2>
+  <div class="presets">
+    <button class="ghost" type="button" data-preset="s">Aumento de s (gráfico 1.11)</button>
+    <button class="ghost" type="button" data-preset="n">Reducción de n (gráfico 1.12)</button>
+    <button class="ghost" type="button" data-preset="A">Aumento de A (gráfico 1.13)</button>
+    <button class="ghost" type="button" data-preset="conv">Economía pobre que converge (1.6–1.7)</button>
+    <button class="ghost" type="button" data-preset="oro">Exceso de ahorro y regla de oro (1.3)</button>
+  </div>
+</aside>
+
+<main>
+  <div class="charts">
+    <figure>
+      <figcaption>Diagrama de Solow (gráfico 1.1)</figcaption>
+      <p>El punto es la economía en t. A la izquierda de k*, la curva de ahorro supera a la de depreciación y k crece.</p>
+      <div class="cbox"><canvas id="ch-levels" role="img" aria-label="Curvas f(k), s f(k) y (δ+n)k"></canvas></div>
+    </figure>
+    <figure>
+      <figcaption>Dinámica de transición (gráfico 1.10)</figcaption>
+      <p>La distancia vertical entre la curva de ahorro (CA) y la de depreciación (CD) es la tasa de crecimiento γ<sub>k</sub>.</p>
+      <div class="cbox"><canvas id="ch-growthdiag" role="img" aria-label="Curva de ahorro sAk^(α-1) y curva de depreciación"></canvas></div>
+    </figure>
+    <figure class="wide">
+      <figcaption>Descomposición de la ecuación fundamental en el tiempo</figcaption>
+      <p>Cada término de [1.15] a lo largo del tiempo. k̇ es la diferencia entre la inversión bruta y la inversión necesaria para reponer el capital.</p>
+      <div class="cbox"><canvas id="ch-decomp" role="img" aria-label="Términos de la ecuación fundamental en el tiempo"></canvas></div>
+    </figure>
+    <figure>
+      <figcaption>Trayectorias de k, y y c</figcaption>
+      <p>Niveles por persona (o por trabajador efectivo si x &gt; 0).</p>
+      <div class="cbox"><canvas id="ch-paths" role="img" aria-label="Trayectorias de capital, producto y consumo"></canvas></div>
+    </figure>
+    <figure>
+      <figcaption>Tasas de crecimiento y aproximación lineal [1.28]</figcaption>
+      <p>γ<sub>y</sub> = α·γ<sub>k</sub>. La línea punteada usa −β*(log k − log k*).</p>
+      <div class="cbox"><canvas id="ch-rates" role="img" aria-label="Tasas de crecimiento de k y de y"></canvas></div>
+    </figure>
+  </div>
+
+  <div class="stats">
+    <table>
+      <thead><tr><th>Indicador</th><th>Antes del choque</th><th>Después del choque</th></tr></thead>
+      <tbody id="stats-body"></tbody>
+    </table>
+    <div class="flag" id="flag-oro"></div>
+  </div>
+</main>
+</div>
+
+<section class="theory">
+  <h2>Las ecuaciones que mueve el simulador</h2>
+  <p>Con la función Cobb-Douglas \(y = f(k) = Ak^{\alpha}\), la ecuación fundamental [1.15] describe el cambio del capital per cápita en cada instante:</p>
+  $$\dot k = sAk^{\alpha} - (\delta + n)k$$
+  <p>Dividiendo entre \(k\) se obtiene la tasa de crecimiento [1.20′], diferencia entre la curva de ahorro y la de depreciación:</p>
+  $$\gamma_k = \frac{\dot k}{k} = sAk^{-(1-\alpha)} - (\delta + n), \qquad \gamma_y = \alpha\,\gamma_k, \qquad \gamma_c = \gamma_y$$
+  <p>El estado estacionario [1.16] es el valor de \(k\) donde \(\dot k = 0\); la regla de oro maximiza el consumo de estado estacionario, lo que en Cobb-Douglas implica \(s_{oro} = \alpha\):</p>
+  $$k^* = \left(\frac{sA}{\delta + n}\right)^{\frac{1}{1-\alpha}}, \qquad f'(k_{oro}) = \delta + n \;\Rightarrow\; k_{oro} = \left(\frac{\alpha A}{\delta + n}\right)^{\frac{1}{1-\alpha}}$$
+  <p>Con progreso técnico exógeno a la tasa \(x\) [1.24], las variables se miden por trabajador efectivo y la depreciación efectiva pasa a ser \(\delta + n + x\); en el estado estacionario, el producto per cápita crece a \(x\). La velocidad de convergencia [1.27]–[1.28] y la vida media de la transición son:</p>
+  $$\beta^* = (1-\alpha)(\delta + n + x), \qquad \gamma_k \approx -\beta^*\left[\log k - \log k^*\right], \qquad t_{1/2} = \frac{\ln 2}{\beta^*}$$
+  <p>Nota numérica: la simulación resuelve la ecuación diferencial con Runge-Kutta de cuarto orden (paso de 0.05 años); los choques son permanentes y ocurren en el instante T.</p>
+</section>
+
+<footer>Basado en X. Sala-i-Martin, <em>Apuntes de crecimiento económico</em>, cap. 1. Proyecto educativo; publícalo con GitHub Pages desde la rama principal.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const DT = 0.05;          // paso de integración (años)
+const SAMPLE = 5;         // guardar 1 de cada 5 pasos (0.25 años)
+
+const shockRanges = {
+  s:{min:0.01,max:0.9,step:0.01,dec:2},
+  A:{min:0.5,max:3,step:0.05,dec:2},
+  n:{min:-0.01,max:0.05,step:0.0025,dec:4},
+  delta:{min:0.02,max:0.2,step:0.005,dec:3},
+  x:{min:0,max:0.05,step:0.0025,dec:4}
+};
+const fmt = (v,d=3) => Number.isFinite(v) ? v.toFixed(d) : "–";
+const pct = (v,d=2) => Number.isFinite(v) ? (100*v).toFixed(d)+"%" : "–";
+
+// ---------- Modelo ----------
+function readBase(){
+  return {s:+$("s").value, A:+$("A").value, alpha:+$("alpha").value,
+          delta:+$("delta").value, n:+$("n").value, x:+$("x").value};
+}
+function readShock(){
+  return {v:$("shv").value, val:+$("shval").value, T:+$("T").value};
+}
+function paramsAt(t, base, sh){
+  if (sh.v === "none" || t < sh.T) return base;
+  const p = Object.assign({}, base); p[sh.v] = sh.val; return p;
+}
+const eff = p => p.delta + p.n + p.x;                       // depreciación efectiva
+const f   = (k,p) => p.A*Math.pow(k,p.alpha);
+const kdotF = (k,p) => p.s*f(k,p) - eff(p)*k;               // ecuación fundamental
+function kstar(p){ const d = eff(p); return d > 0 ? Math.pow(p.s*p.A/d, 1/(1-p.alpha)) : Infinity; }
+function kgold(p){ const d = eff(p); return d > 0 ? Math.pow(p.alpha*p.A/d, 1/(1-p.alpha)) : Infinity; }
+
+function simulate(){
+  const base = readBase(), sh = readShock(), H = +$("H").value;
+  const k0 = (+$("k0r").value) * kstar(base);
+  const out = [];
+  let k = k0, step = 0;
+  const N = Math.round(H/DT);
+  for (step = 0; step <= N; step++){
+    const t = step*DT;
+    const p = paramsAt(t + 1e-9, base, sh);
+    if (step % SAMPLE === 0){
+      const y = f(k,p), inv = p.s*y;
+      const ks = kstar(p);
+      out.push({t, k, y, c:(1-p.s)*y, inv,
+        dep:p.delta*k, dil:p.n*k, tec:p.x*k, kdot:inv - eff(p)*k,
+        gk:p.s*p.A*Math.pow(k,p.alpha-1) - eff(p),
+        gy:p.alpha*(p.s*p.A*Math.pow(k,p.alpha-1) - eff(p)),
+        lin:-(1-p.alpha)*eff(p)*(Math.log(k) - Math.log(ks)),
+        beta:(1-p.alpha)*p.s*p.A*Math.pow(k,p.alpha-1), kst:ks, p});
+    }
+    // RK4 con parámetros constantes dentro del paso
+    const k1 = kdotF(k,p), k2 = kdotF(k+0.5*DT*k1,p), k3 = kdotF(k+0.5*DT*k2,p), k4 = kdotF(k+DT*k3,p);
+    k = Math.max(1e-9, k + DT*(k1+2*k2+2*k3+k4)/6);
+  }
+  return {out, base, sh, H, k0};
+}
+
+// ---------- Colores y gráficos ----------
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+let C = {};
+function readColors(){
+  C = {ink:css("--ink"), muted:css("--muted"), grid:css("--grid"), out:css("--c-out"), inv:css("--c-inv"),
+       dep:css("--c-dep"), dil:css("--c-dil"), tec:css("--c-tec"), kdot:css("--c-kdot")};
+  Chart.defaults.color = C.muted;
+  Chart.defaults.font.family = css("--sans");
+}
+readColors();
+
+const line = (label,color,extra={}) => Object.assign({label, data:[], borderColor:color, backgroundColor:color,
+  borderWidth:2, pointRadius:0, tension:0, parsing:false}, extra);
+const marker = (label,color) => ({label, data:[], type:"scatter", borderColor:color, backgroundColor:color,
+  pointRadius:6, pointHoverRadius:7, parsing:false});
+const vline = (label,color,dash=[5,4]) => line(label,color,{borderWidth:1.5, borderDash:dash});
+
+function baseOpts(xTitle,yTitle){
+  return {responsive:true, maintainAspectRatio:false, animation:false,
+    interaction:{mode:"nearest", intersect:false},
+    plugins:{legend:{labels:{boxWidth:12, filter:i => !i.text.startsWith("_")}},
+             tooltip:{filter:i => !i.dataset.label.startsWith("_"),
+                      callbacks:{label:i => `${i.dataset.label}: ${i.parsed.y.toFixed(4)}`}}},
+    scales:{x:{type:"linear", title:{display:true,text:xTitle}, grid:{color:C.grid}},
+            y:{title:{display:true,text:yTitle}, grid:{color:C.grid}}}};
+}
+
+const charts = {};
+function makeCharts(){
+  Object.values(charts).forEach(c => c.destroy());
+  charts.levels = new Chart($("ch-levels"), {type:"line", options:baseOpts("k","funciones de k"), data:{datasets:[
+    line("f(k) = Ak^α", C.out),
+    line("s·f(k)", C.inv),
+    line("(δ+n+x)·k", C.dep),
+    line("_s·f(k) inicial", C.inv, {borderDash:[4,4], borderWidth:1.2}),
+    line("_dep inicial", C.dep, {borderDash:[4,4], borderWidth:1.2}),
+    vline("k*", C.ink),
+    vline("k oro", C.muted, [2,3]),
+    marker("k en t", C.kdot)]}});
+  charts.growthdiag = new Chart($("ch-growthdiag"), {type:"line", options:baseOpts("k","tasa"), data:{datasets:[
+    line("CA = sAk^(α−1)", C.inv),
+    line("CD = δ+n+x", C.dep),
+    line("_CA inicial", C.inv, {borderDash:[4,4], borderWidth:1.2}),
+    line("_CD inicial", C.dep, {borderDash:[4,4], borderWidth:1.2}),
+    line("γk en t", C.kdot, {borderWidth:4}),
+    marker("_k en t", C.kdot)]}});
+  charts.decomp = new Chart($("ch-decomp"), {type:"line", options:baseOpts("tiempo (años)","unidades de k por año"), data:{datasets:[
+    line("s·A·k^α (inversión bruta)", C.inv),
+    line("δ·k", C.dep),
+    line("n·k", C.dil),
+    line("x·k", C.tec),
+    line("(δ+n+x)·k (inversión de reposición)", C.ink, {borderDash:[6,3], borderWidth:1.5}),
+    line("k̇", C.kdot, {borderWidth:3}),
+    vline("_t", C.muted, [2,2])]}});
+  charts.paths = new Chart($("ch-paths"), {type:"line", options:baseOpts("tiempo (años)","nivel"), data:{datasets:[
+    line("k", C.ink), line("y", C.inv), line("c", C.tec),
+    line("k* vigente", C.ink, {borderDash:[4,4], borderWidth:1}),
+    vline("_t", C.muted, [2,2])]}});
+  charts.rates = new Chart($("ch-rates"), {type:"line", options:baseOpts("tiempo (años)","tasa anual"), data:{datasets:[
+    line("γk", C.ink), line("γy (por trabajador efectivo)", C.inv),
+    line("γy per cápita = γy + x", C.tec, {borderWidth:1.5}),
+    line("aprox. lineal −β*(log k − log k*)", C.dep, {borderDash:[5,4], borderWidth:1.5}),
+    vline("_t", C.muted, [2,2])]}});
+  const pct0 = v => (100*v).toFixed(1)+"%";
+  charts.rates.options.scales.y.ticks = {callback:pct0};
+  charts.rates.options.plugins.tooltip.callbacks.label = i => `${i.dataset.label}: ${(100*i.parsed.y).toFixed(3)}%`;
+}
+
+// ---------- Estado ----------
+let SIM = null;
+function curveGrid(p, kmax, fn, n=220){
+  const pts = [];
+  for (let i=1;i<=n;i++){ const k = kmax*i/n; pts.push({x:k, y:fn(k,p)}); }
+  return pts;
+}
+
+function drawAll(){
+  SIM = simulate();
+  const {out, base, sh, H} = SIM;
+  const post = paramsAt(H, base, sh);
+  const ks0 = kstar(base), ks1 = kstar(post);
+  const kmax = 1.35*Math.max(ks0, ks1, SIM.k0, kgold(base), kgold(post));
+
+  // Series de tiempo
+  const ser = key => out.map(r => ({x:r.t, y:r[key]}));
+  const d = charts.decomp.data.datasets;
+  d[0].data = ser("inv"); d[1].data = ser("dep"); d[2].data = ser("dil"); d[3].data = ser("tec");
+  d[4].data = out.map(r => ({x:r.t, y:r.dep+r.dil+r.tec})); d[5].data = ser("kdot");
+  const xOn = base.x > 0 || post.x > 0;
+  d[3].hidden = !xOn;
+  const pp = charts.paths.data.datasets;
+  pp[0].data = ser("k"); pp[1].data = ser("y"); pp[2].data = ser("c"); pp[3].data = ser("kst");
+  const rr = charts.rates.data.datasets;
+  rr[0].data = ser("gk"); rr[1].data = ser("gy"); rr[2].data = out.map(r => ({x:r.t, y:r.gy + r.p.x}));
+  rr[3].data = ser("lin"); rr[2].hidden = !xOn;
+  [charts.decomp, charts.paths, charts.rates].forEach(c => { c.options.scales.x.min = 0; c.options.scales.x.max = H; });
+
+  // Escalas fijas para los diagramas en k
+  charts.levels.options.scales.x.min = 0; charts.levels.options.scales.x.max = kmax;
+  charts.growthdiag.options.scales.x.min = 0; charts.growthdiag.options.scales.x.max = kmax;
+  const cdMax = Math.max(eff(base), eff(post), 0.01);
+  charts.growthdiag.options.scales.y.min = 0;
+  charts.growthdiag.options.scales.y.max = 3*cdMax;
+  const yTop = Math.max(f(kmax, base), f(kmax, post));
+  charts.levels.options.scales.y.min = 0; charts.levels.options.scales.y.max = yTop*1.05;
+
+  // Tiempo
+  $("tcur").max = H;
+  if (+$("tcur").value > H) $("tcur").value = H;
+  $("term-tec").style.display = xOn ? "" : "none";
+  $("op-tec").style.display = xOn ? "" : "none";
+
+  fillStats(base, post, sh);
+  updateCursor();
+  Object.values(charts).forEach(c => c.update("none"));
+}
+
+function updateCursor(){
+  if (!SIM) return;
+  const t = +$("tcur").value;
+  $("tlabel").textContent = "t = " + t.toFixed(1);
+  const {out, base, sh, H} = SIM;
+  const idx = Math.min(out.length-1, Math.round(t/(DT*SAMPLE)));
+  const r = out[idx], p = r.p;
+  const changed = sh.v !== "none" && t >= sh.T;
+  const kmax = charts.levels.options.scales.x.max;
+
+  // Diagrama de niveles: curvas vigentes en t
+  const L = charts.levels.data.datasets;
+  L[0].data = curveGrid(p, kmax, f);
+  L[1].data = curveGrid(p, kmax, (k,q) => q.s*f(k,q));
+  L[2].data = curveGrid(p, kmax, (k,q) => eff(q)*k);
+  L[3].data = changed ? curveGrid(base, kmax, (k,q) => q.s*f(k,q)) : [];
+  L[4].data = changed ? curveGrid(base, kmax, (k,q) => eff(q)*k) : [];
+  const yTop = charts.levels.options.scales.y.max;
+  const ks = kstar(p), kg = kgold(p);
+  L[5].data = [{x:ks,y:0},{x:ks,y:yTop}];
+  L[6].data = [{x:kg,y:0},{x:kg,y:yTop}];
+  L[7].data = [{x:r.k, y:r.inv}];
+
+  const G = charts.growthdiag.data.datasets;
+  const yMax = charts.growthdiag.options.scales.y.max;
+  const ca = (k,q) => Math.min(q.s*q.A*Math.pow(k,q.alpha-1), yMax*2);
+  G[0].data = curveGrid(p, kmax, ca);
+  G[1].data = [{x:0,y:eff(p)},{x:kmax,y:eff(p)}];
+  G[2].data = changed ? curveGrid(base, kmax, ca) : [];
+  G[3].data = changed ? [{x:0,y:eff(base)},{x:kmax,y:eff(base)}] : [];
+  const caK = p.s*p.A*Math.pow(r.k,p.alpha-1);
+  G[4].data = [{x:r.k,y:Math.min(caK,yMax)},{x:r.k,y:eff(p)}];
+  G[5].data = [{x:r.k,y:Math.min(caK,yMax)}];
+
+  // Cursores verticales en series de tiempo
+  for (const [c, ix] of [[charts.decomp,6],[charts.paths,4],[charts.rates,4]]){
+    const ds = c.data.datasets; let lo = Infinity, hi = -Infinity;
+    ds.forEach((d,j) => { if (j!==ix && !d.hidden) d.data.forEach(q => { if (q.y<lo) lo=q.y; if (q.y>hi) hi=q.y; }); });
+    if (!Number.isFinite(lo)) { lo = 0; hi = 1; }
+    ds[ix].data = [{x:t,y:lo},{x:t,y:hi}];
+  }
+
+  // Ecuación viva
+  $("v-kdot").textContent = fmt(r.kdot,4);
+  $("v-inv").textContent = fmt(r.inv,4);
+  $("v-dep").textContent = fmt(r.dep,4);
+  $("v-dil").textContent = fmt(r.dil,4);
+  $("v-tec").textContent = fmt(r.tec,4);
+  const req = r.dep + r.dil + r.tec, tot = Math.max(r.inv, req);
+  const w = v => (tot > 0 ? Math.max(0, 100*v/tot) : 0) + "%";
+  $("bar-dep").style.width = w(Math.min(r.dep, r.inv));
+  $("bar-dil").style.width = w(Math.max(0, Math.min(r.dil, r.inv - r.dep)));
+  $("bar-tec").style.width = w(Math.max(0, Math.min(r.tec, r.inv - r.dep - r.dil)));
+  $("bar-gap").style.width = w(Math.max(0, r.inv - req));
+  const gap = (r.k/ks - 1);
+  let msg;
+  if (Math.abs(r.kdot) < 1e-5) msg = `En t = ${t.toFixed(1)} la inversión bruta cubre exactamente la reposición: k̇ ≈ 0, la economía está en su estado estacionario.`;
+  else if (r.kdot > 0) msg = `La inversión bruta supera a la reposición en ${fmt(r.kdot,4)}: k crece a ${pct(r.gk)} anual. Está ${pct(-gap,1)} por debajo de k*.`;
+  else msg = `La reposición supera a la inversión bruta en ${fmt(-r.kdot,4)}: k cae a ${pct(r.gk)} anual. Está ${pct(gap,1)} por encima de k*.`;
+  $("eq-note").textContent = msg + " La barra dorada es k̇ cuando es positivo.";
+
+  Object.values(charts).forEach(c => c.update("none"));
+}
+
+function fillStats(base, post, sh){
+  const rows = [];
+  const row = (name, fn, f2=fmt) => rows.push(`<tr><td>${name}</td><td>${f2(fn(base))}</td><td>${sh.v==="none"?"—":f2(fn(post))}</td></tr>`);
+  row("k* (capital de estado estacionario)", p => kstar(p));
+  row("y* = A(k*)^α", p => f(kstar(p),p));
+  row("c* = (1 − s)y*", p => (1-p.s)*f(kstar(p),p));
+  row("k oro", p => kgold(p));
+  row("c oro", p => f(kgold(p),p) - eff(p)*kgold(p));
+  row("s oro = α", p => p.alpha, v => fmt(v,2));
+  row("β* = (1 − α)(δ + n + x)", p => (1-p.alpha)*eff(p), v => pct(v));
+  row("Vida media ln2/β* (años)", p => Math.log(2)/((1-p.alpha)*eff(p)), v => fmt(v,1));
+  row("Crecimiento per cápita de largo plazo", p => p.x, v => pct(v));
+  $("stats-body").innerHTML = rows.join("");
+  const p = sh.v==="none" ? base : post, fl = $("flag-oro");
+  if (p.s > p.alpha + 1e-9){ fl.className = "flag"; fl.textContent = `s = ${p.s.toFixed(2)} es mayor que s oro = α = ${p.alpha.toFixed(2)}: la economía ahorra en exceso y es dinámicamente ineficiente (reducir s aumentaría el consumo hoy y en el largo plazo).`; }
+  else if (Math.abs(p.s - p.alpha) < 1e-9){ fl.className = "flag ok"; fl.textContent = "s = α: el estado estacionario coincide con la regla de oro (consumo máximo de estado estacionario)."; }
+  else { fl.className = "flag ok"; fl.textContent = `s = ${p.s.toFixed(2)} es menor que s oro = ${p.alpha.toFixed(2)}: subir s eleva el consumo de largo plazo, pero a costa de consumo durante la transición.`; }
+}
+
+// ---------- Controles ----------
+const outs = {s:2, A:2, alpha:2, delta:3, n:4, x:4, k0r:2, T:0, H:0};
+function syncLabels(){
+  for (const [id,dec] of Object.entries(outs)) $(id+"-o").textContent = (+$(id).value).toFixed(dec);
+  const v = $("shv").value;
+  $("shval-box").style.display = v === "none" ? "none" : "";
+  if (v !== "none") $("shval-o").textContent = (+$("shval").value).toFixed(shockRanges[v].dec);
+}
+function configShockSlider(keepValue){
+  const v = $("shv").value; if (v === "none") return;
+  const r = shockRanges[v], el = $("shval");
+  el.min = r.min; el.max = r.max; el.step = r.step;
+  if (!keepValue){
+    const cur = +$(v).value;
+    const sugerido = {s:cur+0.10, A:cur*1.5, n:cur-0.01, delta:cur-0.03, x:cur+0.02}[v];
+    el.value = Math.min(r.max, Math.max(r.min, sugerido));
+  }
+}
+let raf = null;
+function onChange(){ syncLabels(); drawAll(); }
+["s","A","alpha","delta","n","x","k0r","shval","T","H"].forEach(id => $(id).addEventListener("input", onChange));
+$("shv").addEventListener("change", () => { configShockSlider(false); onChange(); });
+$("tcur").addEventListener("input", () => { stop(); updateCursor(); });
+
+let playing = false, last = 0;
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function stop(){ playing = false; $("play").textContent = "Reproducir"; if (raf) cancelAnimationFrame(raf); }
+function tick(ts){
+  if (!playing) return;
+  const dt = last ? (ts - last)/1000 : 0; last = ts;
+  const H = +$("tcur").max, speed = H/12;     // recorre el horizonte en ~12 s
+  let t = +$("tcur").value + dt*speed;
+  if (t >= H){ t = H; $("tcur").value = t; updateCursor(); stop(); return; }
+  $("tcur").value = t; updateCursor();
+  raf = requestAnimationFrame(tick);
+}
+$("play").addEventListener("click", () => {
+  if (playing) { stop(); return; }
+  if (+$("tcur").value >= +$("tcur").max) $("tcur").value = 0;
+  if (reduce){ $("tcur").value = $("tcur").max; updateCursor(); return; }
+  playing = true; last = 0; $("play").textContent = "Pausar"; raf = requestAnimationFrame(tick);
+});
+$("reset").addEventListener("click", () => { stop(); $("tcur").value = 0; updateCursor(); });
+
+const presets = {
+  s:   {s:0.20,A:1,alpha:0.30,delta:0.10,n:0.01,x:0,k0r:1, shv:"s", shval:0.30, T:10, H:80},
+  n:   {s:0.20,A:1,alpha:0.30,delta:0.10,n:0.03,x:0,k0r:1, shv:"n", shval:0.005, T:10, H:80},
+  A:   {s:0.20,A:1,alpha:0.30,delta:0.10,n:0.01,x:0,k0r:1, shv:"A", shval:1.5, T:10, H:80},
+  conv:{s:0.20,A:1,alpha:0.30,delta:0.10,n:0.01,x:0,k0r:0.2, shv:"none", shval:0.2, T:10, H:60},
+  oro: {s:0.50,A:1,alpha:0.30,delta:0.05,n:0.01,x:0,k0r:1, shv:"s", shval:0.30, T:10, H:120}
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => {
+  stop();
+  const P = presets[b.dataset.preset];
+  for (const id of ["s","A","alpha","delta","n","x","k0r","T","H"]) $(id).value = P[id];
+  $("shv").value = P.shv; configShockSlider(true); $("shval").value = P.shval;
+  $("tcur").value = 0; onChange();
+}));
+
+// Tema: redibujar si cambia el modo claro/oscuro
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); makeCharts(); drawAll(); });
+
+configShockSlider(true);
+syncLabels();
+makeCharts();
+drawAll();
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.renderMathInElement) renderMathInElement(document.querySelector(".theory"), {
+    delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false}]});
+});
+window.addEventListener("load", () => {
+  if (window.renderMathInElement && !document.querySelector(".theory .katex")) renderMathInElement(document.querySelector(".theory"), {
+    delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false}]});
+});
+})();
+</script>
+</body>
+</html>
